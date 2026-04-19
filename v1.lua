@@ -5,7 +5,6 @@ local Window = Rayfield:CreateWindow({
    LoadingTitle = "読み込み中...",
    LoadingSubtitle = "by User",
    ConfigurationSaving = { Enabled = false },
-   -- キーシステムの設定
    KeySystem = true, 
    KeySettings = {
       Title = "認証が必要",
@@ -14,7 +13,7 @@ local Window = Rayfield:CreateWindow({
       FileName = "CustomScriptKey", 
       SaveKey = true, 
       GrabKeyFromSite = false, 
-      Key = {"しおんさまさいきょう"} -- ここに設定したキー
+      Key = {"しおんさまさいきょう"}
    }
 })
 
@@ -29,9 +28,9 @@ local NamesEnabled = false
 -- Fly/VFly 用の変数
 local Flying = false
 local VFlying = false
-local FlySpeed = 50
+local FlySpeed = 50 -- 初期速度
 
--- --- スピード設定 ---
+-- --- スピード設定 (歩行) ---
 Tab:CreateInput({
    Name = "スピードの値を入力",
    PlaceholderText = "例: 50",
@@ -59,6 +58,18 @@ Tab:CreateToggle({
    Name = "ヒットボックス自動更新",
    CurrentValue = false,
    Callback = function(Value) HitboxEnabled = Value end,
+})
+
+-- --- 飛行速度設定 (追加分) ---
+Tab:CreateInput({
+   Name = "飛行スピード (Fly/VFly) を入力",
+   PlaceholderText = "デフォルト: 50",
+   Callback = function(Text) 
+      local num = tonumber(Text)
+      if num then
+         FlySpeed = num
+      end
+   end,
 })
 
 -- --- 飛行機能 (Fly / VFly) ---
