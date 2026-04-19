@@ -1,8 +1,8 @@
 local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
 
 local Window = Rayfield:CreateWindow({
-   Name = "カスタムツール V10.0 (Ultimate Integration)",
-   LoadingTitle = "全システム読み込み中...",
+   Name = "カスタムツール V13.0 (Official Version)",
+   LoadingTitle = "全システム・ビジュアル読み込み中...",
    LoadingSubtitle = "by User",
    ConfigurationSaving = { Enabled = false },
    KeySystem = true, 
@@ -17,7 +17,8 @@ local Window = Rayfield:CreateWindow({
    }
 })
 
-local Tab = Window:CreateTab("メイン設定", 4483362458)
+-- --- タブ作成 ---
+local MainTab = Window:CreateTab("メイン設定", 4483362458)
 local TPTab = Window:CreateTab("プレイヤーTP", 4483362458)
 local ServerTab = Window:CreateTab("サーバー設定", 4483362458)
 
@@ -35,16 +36,24 @@ local TargetServerID = "" -- 手動入力用
 local SelectedServerID = "" -- リスト選択用
 local ServerListData = {}
 
--- --- メインタブ：移動・攻撃設定 ---
-Tab:CreateSection("移動・攻撃設定")
+-- --- メインタブ：注意書きセクション ---
+MainTab:CreateSection("⚠️ 使用上の注意")
 
-Tab:CreateInput({
+MainTab:CreateLabel("・このスクリプトの使用は自己責任でお願いします。")
+MainTab:CreateLabel("・過度なスピードや飛行はBANのリスクがあります。")
+MainTab:CreateLabel("・表示されているPingは、そのサーバーにいる全員の平均Pingです。")
+MainTab:CreateLabel("・そのため、数値が低いほどアジアサーバーになるとかは関係ないです。")
+
+-- --- メインタブ：移動・攻撃設定 ---
+MainTab:CreateSection("移動・攻撃設定")
+
+MainTab:CreateInput({
    Name = "歩行スピード",
    PlaceholderText = "16",
    Callback = function(Text) TargetSpeed = tonumber(Text) or 16 end,
 })
 
-Tab:CreateButton({
+MainTab:CreateButton({
    Name = "スピードを適用",
    Callback = function()
       local char = game.Players.LocalPlayer.Character
@@ -52,55 +61,55 @@ Tab:CreateButton({
    end,
 })
 
-Tab:CreateInput({
+MainTab:CreateInput({
    Name = "ヒットボックスサイズ",
    PlaceholderText = "2",
    Callback = function(Text) TargetHitboxSize = tonumber(Text) or 2 end,
 })
 
-Tab:CreateToggle({
+MainTab:CreateToggle({
    Name = "ヒットボックス自動更新",
    CurrentValue = false,
    Callback = function(Value) HitboxEnabled = Value end,
 })
 
 -- --- メインタブ：飛行設定 ---
-Tab:CreateSection("飛行設定")
+MainTab:CreateSection("飛行設定")
 
-Tab:CreateInput({
+MainTab:CreateInput({
    Name = "飛行スピード",
    PlaceholderText = "50",
    Callback = function(Text) FlySpeed = tonumber(Text) or 50 end,
 })
 
-Tab:CreateToggle({
+MainTab:CreateToggle({
    Name = "Fly (プレイヤー飛行)",
    CurrentValue = false,
    Callback = function(Value) Flying = Value end,
 })
 
-Tab:CreateToggle({
+MainTab:CreateToggle({
    Name = "VFly (乗り物飛行)",
    CurrentValue = false,
    Callback = function(Value) VFlying = Value end,
 })
 
 -- --- メインタブ：ビジュアル・最適化 ---
-Tab:CreateSection("ビジュアル・最適化")
+MainTab:CreateSection("ビジュアル・最適化")
 
-Tab:CreateToggle({
+MainTab:CreateToggle({
    Name = "トレーサー (線)",
    CurrentValue = false,
    Callback = function(Value) TracersEnabled = Value end,
 })
 
-Tab:CreateToggle({
+MainTab:CreateToggle({
    Name = "ネームタグ",
    CurrentValue = false,
    Callback = function(Value) NamesEnabled = Value end,
 })
 
-Tab:CreateButton({
+MainTab:CreateButton({
    Name = "超低画質モード (FPS向上)",
    Callback = function()
       game:GetService("Lighting").GlobalShadows = false
@@ -118,10 +127,9 @@ Tab:CreateButton({
    end,
 })
 
--- --- メインタブ：キーバインド ---
-Tab:CreateSection("操作設定（キーバインド）")
+MainTab:CreateSection("操作設定（キーバインド）")
 
-Tab:CreateKeybind({
+MainTab:CreateKeybind({
    Name = "UIの表示/非表示キー",
    CurrentKeybind = "RightControl",
    HoldToInteract = false,
@@ -132,7 +140,7 @@ Tab:CreateKeybind({
    end,
 })
 
-Tab:CreateButton({
+MainTab:CreateButton({
    Name = "UIを完全に削除",
    Callback = function() Rayfield:Destroy() end,
 })
@@ -214,10 +222,10 @@ ServerTab:CreateButton({
    end,
 })
 
-ServerTab:CreateSection("サーバー一覧 (ブラウザ)")
+ServerTab:CreateSection("サーバー一覧 (Ping順に表示)")
 
 local ServerDropdown = ServerTab:CreateDropdown({
-   Name = "リストから選択",
+   Name = "リストから選択 (上ほど低Ping推定)",
    Options = {"更新ボタンを押してください"},
    CurrentOption = "",
    Flag = "ServerListDrop",
@@ -230,32 +238,44 @@ local ServerDropdown = ServerTab:CreateDropdown({
 })
 
 ServerTab:CreateButton({
-   Name = "🌏 サーバー一覧を更新 (アジア判別付)",
+   Name = "🌏 サーバー一覧を更新 (低Ping優先)",
    Callback = function()
-      Rayfield:Notify({Title = "取得中", Content = "サーバーリストを更新しています..."})
+      Rayfield:Notify({Title = "取得中", Content = "サーバーリストを解析中..."})
       local Http = game:GetService("HttpService")
       local Api = "https://games.roblox.com/v1/games/" .. game.PlaceId .. "/servers/Public?sortOrder=Asc&limit=50"
       local Raw = game:HttpGet(Api)
       local Data = Http:JSONDecode(Raw)
       
+      local tempTable = {}
       local options = {}
       ServerListData = {}
       
       if Data and Data.data then
          for _, s in pairs(Data.data) do
             if s.id ~= game.JobId then
-               local players = s.playing .. "/" .. s.maxPlayers
-               local ping = s.ping or "???"
-               local label = "[" .. players .. "] Ping: " .. ping
-               if type(ping) == "number" and ping < 120 then
-                  label = "✅[Asia推定] " .. label
-               else
-                  label = "🌐[Other] " .. label
-               end
-               table.insert(options, label)
-               ServerListData[label] = s.id
+               table.insert(tempTable, s)
             end
          end
+         
+         table.sort(tempTable, function(a, b)
+            return (a.ping or 999) < (b.ping or 999)
+         end)
+
+         for _, s in pairs(tempTable) do
+            local players = s.playing .. "/" .. s.maxPlayers
+            local ping = s.ping or "???"
+            local label = ""
+            
+            if type(ping) == "number" and ping < 120 then
+               label = "✅[Asia推定] " .. "[" .. players .. "] Ping: " .. ping
+            else
+               label = "🌐[Other] " .. "[" .. players .. "] Ping: " .. ping
+            end
+            
+            table.insert(options, label)
+            ServerListData[label] = s.id
+         end
+         
          ServerDropdown:Refresh(options, true)
          Rayfield:Notify({Title = "完了", Content = "リストを更新しました"})
       end
@@ -319,7 +339,6 @@ spawn(function()
                 if player ~= lplr and player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
                     local hrp = player.Character.HumanoidRootPart
                     
-                    -- ヒットボックス
                     if HitboxEnabled then
                         hrp.Size = Vector3.new(TargetHitboxSize, TargetHitboxSize, TargetHitboxSize)
                         hrp.Transparency = 0.7
@@ -330,7 +349,6 @@ spawn(function()
                         hrp.Transparency = 1
                     end
 
-                    -- トレーサー
                     if TracersEnabled then
                         local tracer = hrp:FindFirstChild("TracerLine")
                         if not tracer then
@@ -349,7 +367,6 @@ spawn(function()
                         if hrp:FindFirstChild("TracerLine") then hrp.TracerLine:Destroy() end
                     end
 
-                    -- ネームタグ
                     if NamesEnabled then
                         local tag = hrp:FindFirstChild("ESPNameTag")
                         if not tag then
